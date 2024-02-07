@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Verification</title>
+</head>
+<body>
+    <h1>Face Verification</h1>
+
+    <video id="video" width="640" height="480" autoplay></video>
+    
+    <button onclick="captureImage()">Capture Image</button>
+
+    <div id="verificationResult"></div>
+
+    <div id="regionImageContainer"></div>
+
+    <script>
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+            })
+            .catch(function(err) {
+                console.error('Error accessing camera:', err);
+            });
+
+        async function captureImage() {
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const frameImageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+            const frameImageFile = new File([frameImageBlob], 'frame_image.jpg', { type: 'image/jpeg' });
+
+            const formData = new FormData();
+            formData.append('frame', frameImageFile);
+
+            const response = await fetch('http://127.0.0.1:5000/verify', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            const verificationResultDiv = document.getElementById('verificationResult');
+            verificationResultDiv.innerHTML = `<p>Verified: ${result.verified} Name:${result.name}</p>`;
+            
+            if (result.verified) {
+                verificationResultDiv.innerHTML += `<p>Region: ${JSON.stringify(result.region)}</p>`;
+                displayRegionImage(result.region);
+            }
+        }
+
+        function displayRegionImage(region) {
+            const regionImageCanvas = document.createElement('canvas');
+            regionImageCanvas.width = region.w;
+            regionImageCanvas.height = region.h;
+            const context = regionImageCanvas.getContext('2d');
+            const video = document.getElementById('video');
+            context.drawImage(video, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
+            const regionImageURL = regionImageCanvas.toDataURL('image/jpeg');
+            const regionImage = new Image();
+            regionImage.src = regionImageURL;
+
+            const regionImageContainer = document.getElementById('regionImageContainer');
+            regionImageContainer.innerHTML = '<h2>Region Image</h2>';
+            regionImageContainer.appendChild(regionImage);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+[
+    {
+  "id": 1,
+  "name": "John Doe",
+  "image": "/path/to/Doe.jpg"
+},
+{
+    "id": 2,
+    "name": "John Docomoc",
+    "image": "/path/to/Docomoc.jpg"
+  },
+  {
+    "id": 3,
+    "name": "John Dobberman",
+    "image": "/path/to/Dobberman.jpg"
+  }
+]
